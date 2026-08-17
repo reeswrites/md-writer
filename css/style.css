@@ -52,10 +52,12 @@
   .app {
     max-width: 820px;
     margin: 0 auto;
-    padding: 0 24px 48px;
+    padding: 24px 24px 48px;
     position: relative;   /* stacking context so the cover sits below the header */
   }
 
+  /* header + editor form ONE continuous card: header is its rounded top (always
+     the panel, sticky), editor its rounded bottom. No morph, no gap on scroll. */
   header {
     display: flex;
     align-items: flex-start;
@@ -63,27 +65,21 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    background: var(--bg);
-    padding: 20px 24px 14px;   /* horizontal padding insets content from the panel edge */
-    margin-bottom: 12px;
-    border: 1px solid transparent;
-    transition: border-color .2s, box-shadow .2s, background .2s;
-  }
-  header.stuck {
-    top: 8px;                       /* small float so the rounded top clears the edge */
     background: var(--panel);
+    padding: 20px 24px 14px;
     border: 1px solid var(--border);
-    border-radius: 20px 20px 0 0;   /* rounded top matches the editor, square bottom */
-    box-shadow: 0 12px 24px -16px rgba(60,50,30,.45);
+    border-bottom: 1px solid var(--border);   /* divider between header + body */
+    border-radius: 20px 20px 0 0;
+    transition: box-shadow .2s;
   }
-  /* cover the strip above the floated header so scrolling content doesn't peek
-     through the gap. A SIBLING of the header (not ::before) so it stays below
-     the header in the stacking order and never clips the header's top. */
+  header.stuck { box-shadow: 0 12px 24px -18px rgba(60,50,30,.4); }
+  /* backs the rounded top corners with clean background when pinned (sibling of
+     the header so it never clips the header's own top). */
   .top-cover {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0;
-    height: 30px;
+    height: 24px;
     background: var(--bg);
     z-index: 9;
     pointer-events: none;
@@ -299,7 +295,8 @@
   .editor {
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 20px;
+    border-top: none;                 /* continuous with the header above */
+    border-radius: 0 0 20px 20px;
     box-shadow: var(--shadow);
     overflow: hidden;
     padding: 18px 0;
