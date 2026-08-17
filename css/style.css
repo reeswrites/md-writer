@@ -63,26 +63,25 @@
     top: 0;
     z-index: 10;
     background: var(--bg);
-    padding: 24px 0 14px;      /* consistent top space at rest and when pinned */
-    margin-bottom: 16px;
-    border-bottom: 1px solid transparent;
-    transition: border-color .2s, box-shadow .2s;
+    padding: 20px 24px 14px;   /* horizontal padding insets content from the panel edge */
+    margin-bottom: 12px;
+    border: 1px solid transparent;
+    transition: border-color .2s, box-shadow .2s, background .2s;
   }
   header.stuck {
-    top: 14px;                       /* float down so the rounded top is visible */
+    top: 8px;                       /* small float so the rounded top clears the edge */
     background: var(--panel);
+    border: 1px solid var(--border);
     border-radius: 14px 14px 0 0;   /* rounded top matches the editor, square bottom */
-    border-bottom: 1px solid var(--border);
-    box-shadow: 0 10px 24px -16px rgba(60,50,30,.4);
-    padding: 24px 0 16px;
+    box-shadow: 0 12px 24px -16px rgba(60,50,30,.45);
   }
-  /* cover the strip above the floated header so content doesn't peek through
-     (and so the rounded corners reveal clean background, not scrolling text) */
+  /* cover the strip above the floated header so scrolling content doesn't peek
+     through the gap, and the rounded corners reveal clean background */
   header.stuck::before {
     content: "";
     position: fixed;
     top: 0; left: 0; right: 0;
-    height: 30px;
+    height: 24px;
     background: var(--bg);
     z-index: 9;
     pointer-events: none;
