@@ -53,6 +53,7 @@
     max-width: 820px;
     margin: 0 auto;
     padding: 0 24px 48px;
+    position: relative;   /* stacking context so the cover sits below the header */
   }
 
   header {
@@ -76,16 +77,18 @@
     box-shadow: 0 12px 24px -16px rgba(60,50,30,.45);
   }
   /* cover the strip above the floated header so scrolling content doesn't peek
-     through the gap, and the rounded corners reveal clean background */
-  header.stuck::before {
-    content: "";
+     through the gap. A SIBLING of the header (not ::before) so it stays below
+     the header in the stacking order and never clips the header's top. */
+  .top-cover {
+    display: none;
     position: fixed;
     top: 0; left: 0; right: 0;
-    height: 24px;
+    height: 30px;
     background: var(--bg);
     z-index: 9;
     pointer-events: none;
   }
+  header.stuck ~ .top-cover { display: block; }
   header .progress {
     position: absolute;
     left: 0; right: 0; bottom: -1px;
