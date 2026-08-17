@@ -220,7 +220,7 @@
     100% { background: transparent; }
   }
   header .spacer { flex: 1; }
-  .controls { display: flex; align-items: center; gap: 12px; }
+  .controls { display: flex; align-items: center; gap: 12px; position: relative; }
   .status {
     position: relative;
     font-family: var(--mono);
@@ -270,7 +270,7 @@
   /* settings panel */
   .settings-panel {
     position: absolute;
-    top: calc(100% - 10px);
+    top: calc(100% + 6px);
     right: 0;
     width: 240px;
     background: var(--panel);
