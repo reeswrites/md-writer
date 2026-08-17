@@ -153,6 +153,7 @@
     gap: 12px;
     flex-wrap: wrap;
     padding-left: 0;
+    margin-top: 3px;   /* match the visual title→subtitle gap */
     font-family: var(--mono);
     font-size: 11px;
     letter-spacing: .02em;
