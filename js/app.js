@@ -3,6 +3,7 @@ const THEME_KEY = "md-editor-theme";
 const TITLE_KEY = "md-editor-title";
 const TIME_KEY = "md-editor-saved-at";
 const SETTINGS_KEY = "md-writer-settings";
+const SUBTITLE_KEY = "md-writer-subtitle";
 const editor = document.getElementById("editor");
 const statusEl = document.getElementById("status");
 const titleEl = document.getElementById("title");
@@ -810,6 +811,17 @@ titleEl.addEventListener("input", () => {
 });
 titleEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter") { e.preventDefault(); titleEl.blur(); }
+});
+
+/* ---- editable subtitle ---- */
+const subtitleEl = document.getElementById("subtitle");
+subtitleEl.textContent = lsGet(SUBTITLE_KEY) || "";
+subtitleEl.addEventListener("input", () => {
+  lsSet(SUBTITLE_KEY, subtitleEl.textContent.trim());
+  flashSaved();
+});
+subtitleEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") { e.preventDefault(); subtitleEl.blur(); }
 });
 
 applyTheme(lsGet(THEME_KEY));

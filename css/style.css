@@ -128,6 +128,25 @@
     content: "Untitled";
     color: var(--faint);
   }
+  .subtitle {
+    font-family: var(--serif);
+    font-size: 14px;
+    font-style: italic;
+    color: var(--muted);
+    outline: none;
+    border-radius: 5px;
+    padding: 1px 6px;
+    margin-left: -6px;
+    cursor: text;
+    overflow-wrap: anywhere;
+    transition: background .15s, box-shadow .15s;
+  }
+  .subtitle:hover { background: var(--line-active); }
+  .subtitle:focus { background: var(--panel); box-shadow: 0 0 0 1px var(--border), var(--shadow); }
+  .subtitle:empty::before { content: attr(data-ph); color: var(--faint); font-style: normal; }
+  /* hide the empty subtitle placeholder until you hover the header, to keep it clean */
+  .subtitle:empty:not(:focus)::before { opacity: 0; }
+  header:hover .subtitle:empty:not(:focus)::before { opacity: 1; }
   .meta {
     display: flex;
     align-items: baseline;
@@ -299,7 +318,7 @@
     border-radius: 0 0 20px 20px;
     box-shadow: var(--shadow);
     overflow: hidden;
-    padding: 18px 0;
+    padding: 8px 0 20px;
   }
 
   .line {
