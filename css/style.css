@@ -72,7 +72,7 @@
     top: 8px;                       /* small float so the rounded top clears the edge */
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 14px 14px 0 0;   /* rounded top matches the editor, square bottom */
+    border-radius: 20px 20px 0 0;   /* rounded top matches the editor, square bottom */
     box-shadow: 0 12px 24px -16px rgba(60,50,30,.45);
   }
   /* cover the strip above the floated header so scrolling content doesn't peek
@@ -296,7 +296,7 @@
   .editor {
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 14px;
+    border-radius: 20px;
     box-shadow: var(--shadow);
     overflow: hidden;
     padding: 18px 0;
