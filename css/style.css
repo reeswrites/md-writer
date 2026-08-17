@@ -69,10 +69,23 @@
     transition: border-color .2s, box-shadow .2s;
   }
   header.stuck {
-    border-bottom-color: var(--border);
-    border-radius: 14px 14px 0 0;
-    box-shadow: 0 8px 20px -14px rgba(60,50,30,.35);
-    padding-bottom: 18px;
+    top: 14px;                       /* float down so the rounded top is visible */
+    background: var(--panel);
+    border-radius: 14px 14px 0 0;   /* rounded top matches the editor, square bottom */
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 10px 24px -16px rgba(60,50,30,.4);
+    padding: 24px 0 16px;
+  }
+  /* cover the strip above the floated header so content doesn't peek through
+     (and so the rounded corners reveal clean background, not scrolling text) */
+  header.stuck::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 30px;
+    background: var(--bg);
+    z-index: 9;
+    pointer-events: none;
   }
   header .progress {
     position: absolute;
