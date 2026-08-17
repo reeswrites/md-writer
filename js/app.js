@@ -686,12 +686,25 @@ function onKey(e) {
   } else if ((e.key === "ArrowUp" || e.key === "ArrowDown") && (e.metaKey || e.altKey)) {
     // move the current line up/down
     e.preventDefault();
-    const j = active + (e.key === "ArrowUp" ? -1 : 1);
+    const dir = e.key === "ArrowUp" ? -1 : 1;
+    const j = active + dir;
     if (j < 0 || j >= lines.length) return;
     histCommit();
     lines[active] = val;
-    [lines[active], lines[j]] = [lines[j], lines[active]];
-    active = j;
+    const isListLine = (s) => /^\s*([-*]\s+|\d+\.\s+)/.test(s);
+    if (!isListLine(lines[active]) && isListLine(lines[j])) {
+      // a plain block hopping toward a list: skip the whole contiguous list block
+      let k = j;
+      while (k >= 0 && k < lines.length && isListLine(lines[k])) k += dir;
+      const line = lines.splice(active, 1)[0];
+      const insertAt = k - dir;   // just past the block, accounting for the removal shift
+      lines.splice(insertAt, 0, line);
+      active = insertAt;
+    } else {
+      // list item moves through the list one step; plain lines swap normally
+      [lines[active], lines[j]] = [lines[j], lines[active]];
+      active = j;
+    }
     caretPos = selStart;
     save(); build();
   } else if (e.key === "ArrowUp") {
