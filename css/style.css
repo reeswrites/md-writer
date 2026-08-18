@@ -41,6 +41,8 @@
   }
 
   * { box-sizing: border-box; }
+  ::selection { background: color-mix(in srgb, var(--accent) 24%, transparent); }
+  .line-input { caret-color: var(--accent); }
   html, body { height: 100%; margin: 0; }
   body {
     background: var(--bg);
