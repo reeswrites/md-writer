@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""md-writer's local server: serves the editor, owns the drafts on disk.
+"""Drafter's local server: serves the editor, owns the drafts on disk.
 
 Why a server at all, when the editor was deliberately one static page:
 
@@ -17,7 +17,7 @@ Still no dependencies and no build step: python3 and the standard library.
     ./serve.py --dir ~/writing      # somewhere else
     ./serve.py --idle 300           # commit 5 minutes after the last keystroke
 
-The drafts directory is NOT this repo. md-writer is public; the drafts are not,
+The drafts directory is NOT this repo. Drafter is public; the drafts are not,
 and the editor should never be able to write into its own checkout.
 """
 from __future__ import annotations
@@ -26,6 +26,7 @@ import argparse
 import json
 import os
 import re
+import signal
 import subprocess
 import sys
 import threading
@@ -177,7 +178,7 @@ def _title_of(text: str) -> str:
 
 class Handler(BaseHTTPRequestHandler):
     drafts: Drafts = None          # set in main()
-    server_version = "md-writer"
+    server_version = "drafter"
 
     def log_message(self, fmt, *args):   # one line, not three
         if not self.path.startswith("/api/drafts/"):
@@ -252,7 +253,7 @@ class Handler(BaseHTTPRequestHandler):
 def main() -> int:
     # Unbuffered-ish: detached, stdout is a file, and Python block-buffers those.
     # Without this the startup banner and every commit line sit in a buffer, so
-    # `cat md-writer.log` shows nothing on a server that is working fine.
+    # `cat drafter.log` shows nothing on a server that is working fine.
     try:
         sys.stdout.reconfigure(line_buffering=True)
     except AttributeError:
@@ -270,19 +271,34 @@ def main() -> int:
 
     root = Path(args.dir).expanduser().resolve()
     if root == HERE or str(root).startswith(str(HERE) + os.sep):
-        print(f"refusing: --dir is inside md-writer itself ({root}).")
-        print("md-writer is a public repo; drafts belong in their own directory.")
+        print(f"refusing: --dir is inside drafter itself ({root}).")
+        print("Drafter is a public repo; drafts belong in their own directory.")
         return 2
 
     Handler.drafts = Drafts(root, args.idle)
-    print(f"md-writer  http://{args.host}:{args.port}")
+    print(f"drafter  http://{args.host}:{args.port}")
     print(f"  drafts   {root}")
     print(f"  git      {'yes — committing after ' + str(args.idle) + 's idle' if Handler.drafts.is_repo() else 'NO REPO — writes are not versioned (git init to fix)'}")
     srv = ThreadingHTTPServer((args.host, args.port), Handler)
+
+    # Commit on the way out, however the exit arrives. Only KeyboardInterrupt was
+    # handled, so `pkill` (SIGTERM) — and therefore every restart, and a logout —
+    # dropped the pending commit and reset the idle timer. A file sat uncommitted
+    # for three hours that way, which is exactly the writing history this is for.
+    def _bye(signum, _frame):
+        print(f"\n  signal {signum} — flushing...")
+        Handler.drafts.commit_now()
+        raise SystemExit(0)
+
+    for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT):
+        try:
+            signal.signal(sig, _bye)
+        except (OSError, ValueError):
+            pass
+
     try:
         srv.serve_forever()
-    except KeyboardInterrupt:
-        print("\n  flushing...")
+    except (KeyboardInterrupt, SystemExit):
         Handler.drafts.commit_now()
     return 0
 

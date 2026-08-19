@@ -4,6 +4,13 @@ const TITLE_KEY = "md-editor-title";
 const TIME_KEY = "md-editor-saved-at";
 const SETTINGS_KEY = "md-writer-settings";
 const SUBTITLE_KEY = "md-writer-subtitle";
+// The header title before anyone types one. Named because two other places have
+// to recognise it: the file namer must not use it, and loadTitle sets it.
+const PLACEHOLDER_TITLE = "Untitled";
+// The localStorage keys keep their md-editor-/md-writer- names on purpose. They
+// hold whatever is already in a browser; renaming them alongside the app would
+// strand that silently, and the one thing this whole change exists to prevent
+// is losing writing.
 const editor = document.getElementById("editor");
 const statusEl = document.getElementById("status");
 const titleEl = document.getElementById("title");
@@ -815,7 +822,7 @@ function applyTheme(t) {
 /* ---- editable title ---- */
 function loadTitle() {
   const t = lsGet(TITLE_KEY);
-  titleEl.textContent = t !== null ? t : "Markdown";
+  titleEl.textContent = t !== null ? t : PLACEHOLDER_TITLE;
 }
 loadTitle();
 titleEl.addEventListener("input", () => {
@@ -895,12 +902,12 @@ build();
     lsSet(KEY, parsed.body);
     active = -1; sel = null; anchor = -1;
     build();
-    labelEl.textContent = parsed.title || name.replace(/\.md$/, "");
     panel.hidden = true;
   }
 
   async function refresh() {
     const drafts = await Drafts.list();
+    labelEl.textContent = drafts.length ? `Drafts · ${drafts.length}` : "Drafts";
     listEl.innerHTML = "";
     if (!drafts.length) {
       listEl.innerHTML = '<div class="drafts-empty">No drafts yet.</div>';
@@ -981,13 +988,19 @@ build();
     if (!drafts.length) {
       // First run with a server: the doc already in localStorage becomes the
       // first file rather than being stranded behind the new path.
-      const title = titleEl.textContent.trim() || "Untitled";
+      // Name it after what it IS, not after an untouched placeholder. The
+      // header title defaults to a generic word, and the first migration put a
+      // 9,000-word essay in a file called `2026-08-19-markdown.md`.
+      const heading = (lines.find((l) => /^#\s+\S/.test(l)) || "").replace(/^#\s+/, "").trim();
+      const typed = titleEl.textContent.trim();
+      const title = (typed && typed !== PLACEHOLDER_TITLE ? typed : heading) || "Untitled";
+      if (title !== typed) titleEl.textContent = title;
       const name = await Drafts.create(title);
       Drafts.save(doc());
       await Drafts.flush();
-      labelEl.textContent = title;
       return;
     }
+    labelEl.textContent = `Drafts · ${drafts.length}`;
     const pick = drafts.find((d) => d.name === Drafts.lastOpened) || drafts[0];
     show(await Drafts.open(pick.name), pick.name);
   })();

@@ -527,7 +527,14 @@
    with no server running this button stayed visible and did nothing. */
 .drafts-btn[hidden] { display: none; }
 .drafts-btn #drafts-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.drafts-btn .caret { opacity: .5; font-size: .85em; }
+/* An SVG, not a "⌄" glyph: the character sits on its own baseline inside the
+   font's line box, so it rode high next to the label and no amount of
+   vertical-align fixed it across themes. A path is positioned by geometry. */
+.drafts-btn .caret {
+  width: .7em; height: .7em; flex: none; opacity: .55;
+  fill: none; stroke: currentColor; stroke-width: 1.6;
+  stroke-linecap: round; stroke-linejoin: round;
+}
 
 .drafts-panel {
   position: absolute; top: 100%; right: 0; z-index: 40;

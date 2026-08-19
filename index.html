@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MD Writer</title>
-  <meta name="description" content="A tiny inline markdown editor with active-line editing and local autosave.">
+  <title>Drafter</title>
+  <meta name="description" content="A markdown editor where the preview is the writing surface. Many drafts, real files, committed as you write.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23c2703d'/%3E%3Cg fill='none' stroke='%23faf9f7' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 22V11l5 5 5-5v11'/%3E%3Cpath d='M22 11v11'/%3E%3Cpath d='M19 19l3 3 3-3'/%3E%3C/g%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -24,8 +24,9 @@
       </div>
       <div class="spacer"></div>
       <div class="controls">
-        <button class="btn drafts-btn" id="drafts-btn" hidden title="Switch draft">
-          <span id="drafts-label">drafts</span> <span class="caret">⌄</span>
+        <button class="btn drafts-btn" id="drafts-btn" hidden title="Switch or create a draft">
+          <span id="drafts-label">Drafts</span>
+          <svg class="caret" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>
         </button>
         <div class="drafts-panel" id="drafts-panel" hidden>
           <div class="drafts-head">

@@ -1,4 +1,4 @@
-# MD Writer
+# Drafter
 
 A tiny, single-page markdown editor where the **preview is the writing surface**. Every line renders as formatted markdown; click a line and it turns back into raw markdown to edit, with live inline styling as you type. No build step, no dependencies, no account — just one HTML file and a browser.
 
@@ -72,7 +72,7 @@ quietly.
 
 ### The drafts are not in this repo
 
-md-writer is public; your writing probably is not. Keep drafts in their own
+Drafter is public; your writing probably is not. Keep drafts in their own
 directory with their own git history — `serve.py` refuses a `--dir` inside its
 own checkout for exactly that reason.
 
@@ -94,7 +94,7 @@ own checkout for exactly that reason.
 ## Structure
 
 ```
-md-writer/
+drafter/
 ├── index.html     # markup
 ├── css/style.css  # styles (theme tokens, layout)
 ├── js/app.js      # all logic (render, edit, shortcuts, autosave)
