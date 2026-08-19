@@ -860,3 +860,145 @@ window.addEventListener("resize", onScroll, { passive: true });
 onScroll();
 
 build();
+
+/* ---- drafts: many documents, each a file ----------------------------------
+   The editor kept ONE document under a single localStorage key, so starting a
+   second piece overwrote the first. serve.py owns the files now; this wires the
+   editor to it and leaves every existing path intact when the server is absent. */
+(() => {
+  const btn = document.getElementById("drafts-btn");
+  const panel = document.getElementById("drafts-panel");
+  const listEl = document.getElementById("drafts-list");
+  const labelEl = document.getElementById("drafts-label");
+  const dirEl = document.getElementById("drafts-dir");
+
+  const doc = () => ({
+    title: titleEl.textContent.trim(),
+    subtitle: subtitleEl.textContent.trim(),
+    body: lines.join("\n"),
+  });
+
+  // Every existing call site keeps working; the file write rides along.
+  const localSave = save;
+  save = function () { localSave(); Drafts.save(doc()); };
+
+  // Title and subtitle live in frontmatter, so editing them is editing the file.
+  for (const el of [titleEl, subtitleEl]) {
+    el.addEventListener("input", () => Drafts.save(doc()));
+  }
+
+  function show(parsed, name) {
+    if (parsed.title) { titleEl.textContent = parsed.title; lsSet(TITLE_KEY, parsed.title); }
+    subtitleEl.textContent = parsed.subtitle || "";
+    lsSet(SUBTITLE_KEY, parsed.subtitle || "");
+    lines = parsed.body.split("\n");
+    lsSet(KEY, parsed.body);
+    active = -1; sel = null; anchor = -1;
+    build();
+    labelEl.textContent = parsed.title || name.replace(/\.md$/, "");
+    panel.hidden = true;
+  }
+
+  async function refresh() {
+    const drafts = await Drafts.list();
+    listEl.innerHTML = "";
+    if (!drafts.length) {
+      listEl.innerHTML = '<div class="drafts-empty">No drafts yet.</div>';
+      return;
+    }
+    for (const d of drafts) {
+      const row = document.createElement("button");
+      row.className = "draft-row" + (d.name === Drafts.current ? " current" : "");
+      const when = new Date(d.modified);
+      row.innerHTML =
+        `<span class="dt"></span><span class="dm">${d.words.toLocaleString()} words · ` +
+        `${when.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>`;
+      row.querySelector(".dt").textContent = d.title || d.name;
+      row.addEventListener("click", async () => {
+        await Drafts.flush();                 // never lose the one being left
+        show(await Drafts.open(d.name), d.name);
+        refresh();
+      });
+      listEl.appendChild(row);
+    }
+  }
+
+  btn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    panel.hidden = !panel.hidden;
+    if (!panel.hidden) refresh();
+  });
+  document.addEventListener("click", (e) => {
+    if (!panel.hidden && !panel.contains(e.target) && e.target !== btn) panel.hidden = true;
+  });
+
+  // An inline row, not prompt(): a modal dialog steals focus, is blocked
+  // outright in some contexts, and is a jarring thing to hit mid-sentence.
+  const newRow = document.getElementById("new-draft-row");
+  const newTitle = document.getElementById("new-draft-title");
+  document.getElementById("new-draft")?.addEventListener("click", () => {
+    newRow.hidden = !newRow.hidden;
+    if (!newRow.hidden) { newTitle.value = ""; newTitle.focus(); }
+  });
+  // The document-level keydown handler owns a lot of keys for the editor, and a
+  // form inside it never saw its own Enter. Handle both keys here and stop them
+  // from travelling — a text field should keep its own Return and Escape.
+  newTitle?.addEventListener("keydown", (e) => {
+    e.stopPropagation();
+    if (e.key === "Enter") { e.preventDefault(); newRow.requestSubmit(); }
+    else if (e.key === "Escape") { e.preventDefault(); newRow.hidden = true; }
+  });
+  newRow?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const title = newTitle.value.trim();
+    if (!title) return;
+    newRow.hidden = true;
+    await Drafts.flush();                  // the draft being left is finished first
+    const name = await Drafts.create(title);
+    if (!name) return;
+    show({ title, subtitle: "", body: `# ${title}\n\n` }, name);
+    Drafts.save(doc());
+    await Drafts.flush();
+    refresh();
+  });
+
+  (async () => {
+    const drafts = await Drafts.boot();
+    if (drafts === null) {
+      // No server. Everything below stays as it was, but say so — "my writing is
+      // in one browser and nowhere else" should not be something you find out.
+      statusEl.classList.add("unsaved-warn");
+      statusEl.dataset.tip =
+        "Browser-only — this draft lives in localStorage. Run ./serve.py to write real files.";
+      return;
+    }
+    btn.hidden = false;
+    dirEl.textContent = Drafts.dir;
+    dirEl.title = Drafts.repo ? `${Drafts.dir} — committed after you stop writing`
+                              : `${Drafts.dir} — not a git repo, so nothing is versioned`;
+    Drafts.installFlushHooks();
+
+    if (!drafts.length) {
+      // First run with a server: the doc already in localStorage becomes the
+      // first file rather than being stranded behind the new path.
+      const title = titleEl.textContent.trim() || "Untitled";
+      const name = await Drafts.create(title);
+      Drafts.save(doc());
+      await Drafts.flush();
+      labelEl.textContent = title;
+      return;
+    }
+    const pick = drafts.find((d) => d.name === Drafts.lastOpened) || drafts[0];
+    show(await Drafts.open(pick.name), pick.name);
+  })();
+
+  Drafts.onChange((ev, detail) => {
+    if (ev === "save-failed") {
+      statusEl.classList.add("unsaved-warn");
+      statusEl.textContent = "not saved to disk";
+      statusEl.dataset.tip = `Could not write ${detail.name}. Still in this browser; will retry.`;
+    } else if (ev === "saved") {
+      statusEl.classList.remove("unsaved-warn");
+    }
+  });
+})();

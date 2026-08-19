@@ -17,7 +17,7 @@ I wanted a nice, easy way to write *nice* markdown for longer blog posts — whe
 - **TODO / FIXME counts** in the header — hover to see every occurrence and click to jump to it.
 - **Multi-line editing**: shift-click or drag to select whole lines; `⌘C` / `⌘X` copy/cut, `⌫` delete, `⌘↑` / `⌘↓` move a line.
 - **Undo / redo** with coalesced typing (`⌘Z` / `⌘⇧Z`).
-- **Autosave** to `localStorage` with a "saved · Nm ago" timestamp.
+- **Autosave** with a "saved · Nm ago" timestamp — to real files on disk when run as a server, to `localStorage` when opened as a plain file.
 - **Sticky header** with a reading-progress bar.
 - **Settings** (gear icon): toggle word count, flag counts, and progress bar; light/dark/auto theme; copy-all / clear.
 - **Word count + reading time** (hover the count for characters + estimate).
@@ -25,18 +25,56 @@ I wanted a nice, easy way to write *nice* markdown for longer blog posts — whe
 
 ## Run it
 
-It's one static page — no install, no build.
+Two ways, and they differ in where your writing ends up.
+
+**As a file** — one static page, no server, no install. Autosaves to
+`localStorage`, which means **one document**, in **one browser**, with no backup.
+Fine for a scratchpad; do not write anything you would miss.
 
 ```bash
-git clone https://github.com/reeswrites/md-writer.git
-cd md-writer
-python3 -m http.server 8000
-# open http://localhost:8000
+open index.html
 ```
 
-Because it loads `css/` and `js/` as separate files, serve it over `http://` (any static server) rather than opening `index.html` straight from disk — some browsers block local file requests via `file://`.
+**As a server** — many documents, each a real `.md` file on disk, committed to
+git after you stop writing.
 
-Your document lives in your browser's `localStorage`; nothing is sent anywhere.
+```bash
+./serve.py
+```
+
+Then open <http://localhost:8787>. No dependencies: python3 and the standard
+library. Drafts go to `~/Documents/drafts` by default.
+
+```bash
+./serve.py --dir ~/writing     # somewhere else
+./serve.py --idle 300          # commit 5 minutes after the last keystroke
+./serve.py --port 9000
+```
+
+### What the server adds
+
+- **Many drafts.** A switcher in the header; each draft is its own file, named
+  from its title (`2026-08-19-on-keeping-a-notebook.md`). The single-document
+  limit is the bug this exists to fix.
+- **Debounced writes.** ~800ms after you stop typing, so a crash costs a
+  sentence rather than a session. Writes are atomic — temp file then rename —
+  because a half-written draft is worse than a slightly stale one.
+- **Git, on its own.** If the drafts directory is a repo, the server commits 15
+  minutes after writing stops, so **one commit is one sitting**. That log is the
+  artifact: when each piece moved, how long it sat, which ones went cold.
+- **Jekyll frontmatter.** Title and subtitle are written as `title:` and
+  `description:`, so a finished draft moves into a Jekyll `_posts/` directory
+  without being reformatted.
+
+If the server is not running, the editor still works exactly as it did — it
+falls back to `localStorage` and says so in the header rather than failing
+quietly.
+
+### The drafts are not in this repo
+
+md-writer is public; your writing probably is not. Keep drafts in their own
+directory with their own git history — `serve.py` refuses a `--dir` inside its
+own checkout for exactly that reason.
 
 ## Keyboard shortcuts
 
@@ -57,12 +95,15 @@ Your document lives in your browser's `localStorage`; nothing is sent anywhere.
 
 ```
 md-writer/
-├── index.html    # markup
-├── css/style.css # styles (theme tokens, layout)
-└── js/app.js     # all logic (render, edit, shortcuts, autosave)
+├── index.html     # markup
+├── css/style.css  # styles (theme tokens, layout)
+├── js/app.js      # all logic (render, edit, shortcuts, autosave)
+├── js/drafts.js   # the drafts store — talks to serve.py, falls back to localStorage
+└── serve.py       # optional: serves the app, owns the files, commits them
 ```
 
-Vanilla HTML/CSS/JS. No framework, no bundler.
+Vanilla HTML/CSS/JS, no framework and no bundler. `serve.py` is python3 and the
+standard library — the app runs without it.
 
 ## License
 

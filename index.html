@@ -24,6 +24,20 @@
       </div>
       <div class="spacer"></div>
       <div class="controls">
+        <button class="btn drafts-btn" id="drafts-btn" hidden title="Switch draft">
+          <span id="drafts-label">drafts</span> <span class="caret">⌄</span>
+        </button>
+        <div class="drafts-panel" id="drafts-panel" hidden>
+          <div class="drafts-head">
+            <span id="drafts-dir"></span>
+            <button class="btn" id="new-draft">New draft</button>
+          </div>
+          <form class="new-draft-row" id="new-draft-row" hidden>
+            <input id="new-draft-title" type="text" placeholder="Title…" autocomplete="off">
+            <button class="btn" type="submit">Create</button>
+          </form>
+          <div class="drafts-list" id="drafts-list"></div>
+        </div>
         <span class="status" id="status" data-tip="Saved in this browser (localStorage)">saved</span>
         <button class="btn icon" id="settings-btn" title="Settings" aria-label="Settings">⚙</button>
         <div class="settings-panel" id="settings" hidden>
@@ -47,6 +61,7 @@
     </div>
   </div>
 
+  <script src="js/drafts.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
