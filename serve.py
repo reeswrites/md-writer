@@ -27,6 +27,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 import threading
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -249,6 +250,14 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> int:
+    # Unbuffered-ish: detached, stdout is a file, and Python block-buffers those.
+    # Without this the startup banner and every commit line sit in a buffer, so
+    # `cat md-writer.log` shows nothing on a server that is working fine.
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except AttributeError:
+        pass
+
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--dir", default=str(Path.home() / "Documents" / "drafts"))
     ap.add_argument("--port", type=int, default=8787)
