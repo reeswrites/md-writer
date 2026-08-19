@@ -26,7 +26,6 @@ import argparse
 import json
 import os
 import re
-import signal
 import subprocess
 import sys
 import threading
@@ -73,10 +72,8 @@ def _porcelain_name(line: str) -> str:
 class Drafts:
     """The drafts directory, and the debounced commit that follows writing."""
 
-    def __init__(self, root: Path, idle: int):
+    def __init__(self, root: Path):
         self.root = root
-        self.idle = idle
-        self._timer: threading.Timer | None = None
         self._lock = threading.Lock()
         self.root.mkdir(parents=True, exist_ok=True)
 
@@ -117,18 +114,6 @@ class Drafts:
             print(f"  committed — {subject}")
             return subject
 
-    def schedule_commit(self) -> None:
-        """Reset the idle timer. Fires once, `idle` seconds after the LAST write,
-        so a commit marks the end of a sitting rather than chopping one up."""
-        if not self.is_repo():
-            return
-        with self._lock:
-            if self._timer:
-                self._timer.cancel()
-            self._timer = threading.Timer(self.idle, self.commit_now)
-            self._timer.daemon = True
-            self._timer.start()
-
     # ── files ──────────────────────────────────────────────────────────────
     def list(self) -> list[dict]:
         out = []
@@ -164,7 +149,6 @@ class Drafts:
         tmp = p.with_suffix(".md.tmp")
         tmp.write_text(text, encoding="utf-8")
         os.replace(tmp, p)
-        self.schedule_commit()
 
 
 def _title_of(text: str) -> str:
@@ -262,8 +246,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--dir", default=str(Path.home() / "Documents" / "drafts"))
     ap.add_argument("--port", type=int, default=8787)
-    ap.add_argument("--idle", type=int, default=900,
-                    help="seconds of quiet before committing (default 900)")
+    ap.add_argument("--commit-once", action="store_true",
+                    help="commit whatever has changed, then exit (for the nightly)")
     # Bound to loopback unless asked otherwise. This endpoint writes files; it
     # does not go on the LAN by accident.
     ap.add_argument("--host", default="127.0.0.1")
@@ -275,31 +259,32 @@ def main() -> int:
         print("Drafter is a public repo; drafts belong in their own directory.")
         return 2
 
-    Handler.drafts = Drafts(root, args.idle)
+    Handler.drafts = Drafts(root)
+
+    # Committing used to happen here, on an idle timer. It was the wrong home:
+    # it required this process to still be alive when the timer fired, so a
+    # crash, a SIGKILL, a flat battery — or simply never having started the
+    # server — silently skipped it. The most fragile process in the chain was
+    # the one holding the durability guarantee. The nightly runs whether or not
+    # anything is open, so it owns the commit now, and this is the one-shot it
+    # calls. Writing files is this server's only job.
+    if args.commit_once:
+        if not Handler.drafts.is_repo():
+            print(f"drafter: {root} is not a git repo — nothing to commit")
+            return 0
+        subject = Handler.drafts.commit_now()
+        print(f"drafter: {subject or 'nothing to commit'}")
+        return 0
+
     print(f"drafter  http://{args.host}:{args.port}")
     print(f"  drafts   {root}")
-    print(f"  git      {'yes — committing after ' + str(args.idle) + 's idle' if Handler.drafts.is_repo() else 'NO REPO — writes are not versioned (git init to fix)'}")
+    print(f"  git      {'yes — committed by the nightly, not by this process' if Handler.drafts.is_repo() else 'NO REPO — writes are not versioned (git init to fix)'}")
     srv = ThreadingHTTPServer((args.host, args.port), Handler)
-
-    # Commit on the way out, however the exit arrives. Only KeyboardInterrupt was
-    # handled, so `pkill` (SIGTERM) — and therefore every restart, and a logout —
-    # dropped the pending commit and reset the idle timer. A file sat uncommitted
-    # for three hours that way, which is exactly the writing history this is for.
-    def _bye(signum, _frame):
-        print(f"\n  signal {signum} — flushing...")
-        Handler.drafts.commit_now()
-        raise SystemExit(0)
-
-    for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT):
-        try:
-            signal.signal(sig, _bye)
-        except (OSError, ValueError):
-            pass
 
     try:
         srv.serve_forever()
-    except (KeyboardInterrupt, SystemExit):
-        Handler.drafts.commit_now()
+    except KeyboardInterrupt:
+        pass
     return 0
 
 
