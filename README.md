@@ -35,12 +35,19 @@ Fine for a scratchpad; do not write anything you would miss.
 open index.html
 ```
 
-**As a server** — many documents, each a real `.md` file on disk, committed to
-git after you stop writing.
+**As a server** — many documents, each a real `.md` file on disk, versioned by
+the nightly.
 
 ```bash
 ./serve.py
 ```
+
+Or double-click **`drafter.command`** (put an alias on the Desktop). It starts
+the server, waits until it actually answers before opening the browser, and
+hands the Terminal window over as the log — so closing the window stops the
+server, which is what you expect from something you started by double-clicking.
+Double-clicking while it is already running just opens the browser rather than
+failing to bind a second copy.
 
 Then open <http://localhost:8787>. No dependencies: python3 and the standard
 library. Drafts go to `~/Documents/drafts` by default.
@@ -99,7 +106,8 @@ drafter/
 ├── css/style.css  # styles (theme tokens, layout)
 ├── js/app.js      # all logic (render, edit, shortcuts, autosave)
 ├── js/drafts.js   # the drafts store — talks to serve.py, falls back to localStorage
-└── serve.py       # optional: serves the app, owns the files, commits them
+├── serve.py       # optional: serves the app and owns the files on disk
+└── drafter.command # double-clickable launcher (alias this to the Desktop)
 ```
 
 Vanilla HTML/CSS/JS, no framework and no bundler. `serve.py` is python3 and the
