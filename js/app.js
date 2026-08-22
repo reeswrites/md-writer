@@ -626,16 +626,15 @@ function onKey(e) {
   if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.code === "Digit8") { e.preventDefault(); setListType("bullet", selStart); return; }
   if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.code === "Digit7") { e.preventDefault(); setListType("number", selStart); return; }
 
-  // Ctrl+D -> delete the current line
+  // Ctrl+D -> delete the current line, only if it's empty
   if (e.ctrlKey && (e.key === "d" || e.key === "D")) {
+    if (val.trim() !== "") return;   // let the browser keep its default otherwise
     e.preventDefault();
+    if (lines.length <= 1) return;
     histCommit();
-    if (lines.length <= 1) { lines = [""]; active = 0; caretPos = 0; }
-    else {
-      lines.splice(active, 1);
-      if (active >= lines.length) active = lines.length - 1;
-      caretPos = 0;
-    }
+    lines.splice(active, 1);
+    active = Math.max(0, active - 1);
+    caretPos = (lines[active] || "").length;
     save(); build();
     return;
   }
