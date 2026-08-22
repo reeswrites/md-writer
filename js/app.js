@@ -626,6 +626,30 @@ function onKey(e) {
   if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.code === "Digit8") { e.preventDefault(); setListType("bullet", selStart); return; }
   if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.code === "Digit7") { e.preventDefault(); setListType("number", selStart); return; }
 
+  // Ctrl+D -> delete the current line
+  if (e.ctrlKey && (e.key === "d" || e.key === "D")) {
+    e.preventDefault();
+    histCommit();
+    if (lines.length <= 1) { lines = [""]; active = 0; caretPos = 0; }
+    else {
+      lines.splice(active, 1);
+      if (active >= lines.length) active = lines.length - 1;
+      caretPos = 0;
+    }
+    save(); build();
+    return;
+  }
+  // "[" with a selection -> wrap it as a link, caret ready inside the ( )
+  if (e.key === "[" && selStart !== selEnd) {
+    e.preventDefault();
+    histCommit();
+    const chosen = val.slice(selStart, selEnd);
+    lines[active] = val.slice(0, selStart) + "[" + chosen + "](" + ")" + val.slice(selEnd);
+    caretPos = selStart + chosen.length + 3;   // between ( and )
+    save(); build();
+    return;
+  }
+
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     histCommit();
