@@ -64,7 +64,10 @@ const Drafts = (() => {
     const end = text.indexOf("\n---", 3);
     if (end === -1) return { title: "", subtitle: "", body: text };
     const head = text.slice(3, end);
-    const body = text.slice(end + 4).replace(/^\n/, "");
+    // strip the blank separator serialise() writes after the closing fence
+    // (one \n ends the --- line, one \n is the Jekyll blank line) so it doesn't
+    // reappear as an empty first line every reload
+    const body = text.slice(end + 4).replace(/^\n\n?/, "");
     const field = (name) => {
       const m = head.match(new RegExp(`^${name}:\\s*(.+?)\\s*$`, "m"));
       if (!m) return "";
